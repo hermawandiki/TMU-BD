@@ -179,6 +179,7 @@ def main():
         cycleTime = (round(10000 * (time.time() - start_time)))/10000
         if debugMsg == True: print("2D|Cycle time %s" % cycleTime)
         print("2T|%s" % datetime.datetime.now())
+        # print("2D|Still Running")
         sys.stdout.flush()
     
 if __name__ == "__main__":

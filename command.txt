@@ -1,0 +1,4 @@
+ssh pi@172.20.238.8 "sudo systemctl stop tmu.service; sleep 5; rm -r /home/pi/tmu-v2-smart" && scp -r tmu-v2-smart pi@172.20.238.8:/home/pi/ && ssh pi@172.20.238.8 "sudo systemctl start tmu.service && sleep 3 && sudo systemctl status tmu.service && sleep 5 && sudo tail -n 100 $(ls -t /home/pi/tmu-v2-smart/assets/sysdata-test/syslog-*.log | head -1)"
+
+
+note: sesuaikan alamat IP

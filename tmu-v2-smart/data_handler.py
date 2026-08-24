@@ -466,6 +466,7 @@ def main():
         cycleTime = (round(10000 * (time.time() - start_time)))/10000
         if debugMsg == True: print("1D|Cycle time %s" % cycleTime)
         print("1T|%s" % datetime.datetime.now())
+        # print("1D|Still Running")
         sys.stdout.flush()
         time.sleep(4)
         

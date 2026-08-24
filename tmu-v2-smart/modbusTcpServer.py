@@ -8,12 +8,18 @@ import tkinter as tk
 from tkinter.scrolledtext import ScrolledText
 import threading
 import mysql.connector
+import datetime, sys
+
+debugMsg = False
+infoMsg = True
 
 db = mysql.connector.connect(
     host = "localhost",
     user = "client",
     passwd = "raspi",
     database= "iot_trafo_client")
+
+if infoMsg == True: print("4D|Initialize program")
 
 def unsigned32bit(value):
     high_register = (value >> 16) & 0xFFFF
@@ -35,11 +41,11 @@ def signed16bit(value):
         raise ValueError(f"Nilai {value} di luar rentang signed 16-bit (-32768 s.d. 32767)")
     if value < 0:
         value = (1 << 16) + value
-    return value & 0xFFF
+    return value & 0xFFFF
 
 def dataStore(data):
     storage = [0]*80
-    #print(data[50])
+    # print(data)
     #Voltage
     for i in range(0, 6): 
         data[i] = round(data[i]*10)
@@ -55,11 +61,11 @@ def dataStore(data):
     #P & Q
     for i in range(0, 8): 
         data[i+17] = round(data[i+17]*10)
-        storage[i*2 + 24], storage[i*2 + 23] = signed32bit(data[i])    
+        storage[i*2 + 24], storage[i*2 + 23] = signed32bit(data[i+17])    
     #S
     for i in range(0, 4): 
         data[i+25] = round(data[i+25]*10)
-        storage[i*2 + 40], storage[i*2 + 39] = unsigned32bit(data[i])
+        storage[i*2 + 40], storage[i*2 + 39] = unsigned32bit(data[i+25])
     #PF
     for i in range(29, 33):
         data[i] = round(data[i]*100)
@@ -69,14 +75,14 @@ def dataStore(data):
     storage[51] = data[33]
     #KWH
     for i in range(0, 2): 
-        data[i + 34] = round(data[i + 34]*10)
-        storage[i*2 + 53], storage[i*2 + 52] = unsigned32bit(data[i])
+        data[i+34] = round(data[i+34]*10)
+        storage[i*2 + 53], storage[i*2 + 52] = unsigned32bit(data[i+34])
     #Busbar
     for i in range(36, 43):
         data[i] = round(data[i]*100)
         storage[i + 20] = data[i]
     #Pressure
-    data[43] = round(data[43]*1000)
+    data[43] = signed16bit(round(data[43]*1000))
     storage[63] = data[43]
     #Level
     storage[64] = data[44]
@@ -101,8 +107,8 @@ def dataStore(data):
     storage[72] = data[52]
     #Gap Voltage
     for i in range(0, 3): 
-        data[i + 53] = round(data[i + 53]*10)
-        storage[i*2 + 74], storage[i*2 + 73] = unsigned32bit(data[i])
+        data[i+53] = round(data[i+53]*10)
+        storage[i*2 + 74], storage[i*2 + 73] = unsigned32bit(data[i+53])
     return storage
 
 def gatherValues():
@@ -114,7 +120,7 @@ def gatherValues():
     listResult.pop(0)
     listResult.pop(0)
     db.commit()
-    print
+    # print(listResult)
     return dataStore(listResult)
 
 # Handler untuk menampilkan log di tkinter
@@ -137,8 +143,8 @@ class LogDisplayHandler(logging.Handler):
 # Fungsi untuk memulai tkinter dalam thread terpisah
 def start_tkinter_loop():
     root = tk.Tk()
-    root.withdraw()
     root.title("Modbus Server Log")
+    root.attributes("-topmost", False)
     text_area = ScrolledText(root, wrap=tk.WORD, state='disabled', height=20, width=80)
     text_area.pack(padx=10, pady=10)
     text_area.configure(state='normal')
@@ -148,10 +154,11 @@ def start_tkinter_loop():
     log.addHandler(log_handler)
     log.setLevel(logging.DEBUG)
 
+    root.withdraw()
     root.mainloop()
     
 # Jalankan tkinter di thread terpisah
-threading.Thread(target=start_tkinter_loop, daemon=True).start()
+# threading.Thread(target=start_tkinter_loop, daemon=True).start()
 
 # Konfigurasi logging
 logging.basicConfig()
@@ -169,13 +176,18 @@ context = ModbusServerContext(slaves=store, single=True)
 
 # Fungsi untuk memperbarui nilai register setiap 2 detik
 async def update_register_values():
+    if infoMsg == True: print("4D|Start Loop")
     while True:
-        
         new_values = gatherValues()
         #print(new_values)
         store.setValues(3, 0, new_values)  # 3 = Holding Register
         log.debug(f"register values updated: {new_values}")
         log.debug(f"register values updated")
+
+        print("4T|%s" % datetime.datetime.now())
+        # print("4D|Still Running")
+        sys.stdout.flush()
+
         await asyncio.sleep(2)
 
 # Identifikasi perangkat

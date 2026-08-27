@@ -82,7 +82,7 @@ def dataStore(data):
         data[i] = round(data[i]*100)
         storage[i + 20] = data[i]
     #Pressure
-    data[43] = signed16bit(round(data[43]*1000))
+    data[43] = round(data[43]*1000)
     storage[63] = data[43]
     #Level
     storage[64] = data[44]

@@ -1,0 +1,17 @@
+main.py
+- ganti urutan thread start
+- hapus data9Txt
+- ganti urutan proc
+- ganti index proc args
+
+modbusTcpServer.py
+- ganti 0xFFF ke 0xFFFF di signed16bit
+- hapus print di gatherValues
+
+data_stream.py
+- komen print di get_status
+
+data_handler.py
+- buat false infoMsg
+- stat press temp
+- slave id rtu

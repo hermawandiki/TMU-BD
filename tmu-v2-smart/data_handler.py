@@ -19,8 +19,8 @@ gasType = False
 transmitterModeMinus = False
 
 exhibitStat = False
-OLTCstat = False
-pressureStat = True
+OLTCstat = True
+pressureStat = False
 tempStat = True
 
 companyKey = "P66geqk4bYQuetarke2Z"
@@ -219,6 +219,9 @@ def main():
                 pass
         
         if debugMsg == True: print("1D|5 Read Input IO")
+        prdTrigger = inputIO[1][2]
+        bucholzAlarm = inputIO[2][2]
+        bucholzTrip = inputIO[3][2]
         oilLevelAlarm = inputIO[4][2]
         oilLevelTrip = inputIO[5][2]
         analogIn1 = inputIO[6][2]
@@ -249,6 +252,10 @@ def main():
             inputData[43] = (analogIn2 - 6553) / 26214
         else:
             inputData[43] = 0
+
+        # DI Status to Pressure Value
+        if OLTCstat:
+            inputData[43] = (bucholzTrip << 2) | (bucholzAlarm << 1) | prdTrigger
         
         #Exhibition only
         if exhibitStat:

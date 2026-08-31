@@ -109,6 +109,8 @@ def dataStore(data):
     for i in range(0, 3): 
         data[i+53] = round(data[i+53]*10)
         storage[i*2 + 74], storage[i*2 + 73] = unsigned32bit(data[i+53])
+    #OLTC (Tap Pos)
+    storage[79] = data[56]
     return storage
 
 def gatherValues():
@@ -119,6 +121,12 @@ def gatherValues():
     listResult = list(result[0])
     listResult.pop(0)
     listResult.pop(0)
+
+    sql1 = "SELECT impedance FROM transformer_data WHERE trafoId = 1"
+    cursor.execute(sql1)
+    result1 = cursor.fetchone()
+    listResult.append(result1[0])
+
     db.commit()
     # print(listResult)
     return dataStore(listResult)

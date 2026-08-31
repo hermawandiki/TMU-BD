@@ -35,8 +35,18 @@ class DataStream:
             LIMIT 1
         """)
         row = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT impedance
+            FROM transformer_data
+            WHERE trafoId = 1
+        """)
+        row1 = cursor.fetchone()
+
         cursor.close()
         if row:
+            result = list(row)
+            result.append(row1[0] if row1 else None)  # Append impedance value
             return row
         return None
 
@@ -198,7 +208,7 @@ class DataStream:
                 [textPropVal[13], False, False], # THDv Phase U
                 [textPropVal[14], False, False], # THDv Phase V
                 [textPropVal[15], False, False], # THDv Phase W
-                [" ", False, False],
+                [textPropVal[58], False, False], # OLTC Tap Pos
                 [" ", False, False]),
                 
             # HALAMAN 5: K-Rated, Derating, & Unbalance Voltage
@@ -221,7 +231,7 @@ class DataStream:
 
     def get_snapshot(self, page = 0):
         values = self.get_latest_values()
-        if not values or len(values) < 58:
+        if not values or len(values) < 59:
             return None
         status = self.get_status()
 
@@ -247,8 +257,9 @@ class DataStream:
                          "Oil Pressure   : ", "Oil Level      : ", "K-Rated U      : ", "Derating U     : ", 
                          "K-Rated V      : ", "Derating V     : ", "K-Rated W      : ", "Derating W     : ",
                          "H2 Level (ppm) : ", "Moisture Level : ",
-                         "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : "]
-        textPropVal = [" "]*58
+                         "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : ",
+                         "OLTC Tap Pos   : "]
+        textPropVal = [" "]*59
         for i, key in enumerate(keyVal):
             textPropVal[i] = key + str(values[i+1])
 

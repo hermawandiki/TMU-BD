@@ -122,7 +122,7 @@ def gatherValues():
     listResult.pop(0)
     listResult.pop(0)
 
-    sql1 = "SELECT impedance FROM transformer_data WHERE trafoId = 1"
+    sql1 = "SELECT impedance FROM transformer_data ORDER BY trafoId DESC LIMIT 1"
     cursor.execute(sql1)
     result1 = cursor.fetchone()
     listResult.append(result1[0])
@@ -130,6 +130,23 @@ def gatherValues():
     db.commit()
     # print(listResult)
     return dataStore(listResult)
+
+# Tambahkan fungsi untuk mengambil nilai coil dari database
+def gatherCoilValues():
+    cursor = db.cursor()
+    sql = "SELECT * FROM di_scan WHERE number BETWEEN 0 AND 5 ORDER BY number ASC"
+    cursor.execute(sql)
+    result = cursor.fetchall()
+
+    listResult = []
+    for row in result:
+        rowList = list(row)
+        state = rowList[2]  # kolom ke-2 = state
+        listResult.append(bool(state))
+
+    db.commit()
+    # print(listResult)
+    return listResult
 
 # Handler untuk menampilkan log di tkinter
 class LogDisplayHandler(logging.Handler):
@@ -188,9 +205,16 @@ async def update_register_values():
     while True:
         new_values = gatherValues()
         #print(new_values)
-        store.setValues(3, 0, new_values)  # 3 = Holding Register
+        store.setValues(3, 0, new_values)  # 3 = Holding Register   
         log.debug(f"register values updated: {new_values}")
         log.debug(f"register values updated")
+
+        # Update coil values
+        coils_update = gatherCoilValues()
+        #print(coils_update)
+        store.setValues(1, 0, coils_update)  # 1 = Coil
+        log.debug(f"coil values updated: {coils_update}")
+        log.debug(f"coil values updated")
 
         print("4T|%s" % datetime.datetime.now())
         # print("4D|Still Running")

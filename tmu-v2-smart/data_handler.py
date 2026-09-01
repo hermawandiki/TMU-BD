@@ -256,6 +256,7 @@ def main():
         # DI Status to Pressure Value
         if OLTCstat:
             inputData[43] = (bucholzTrip << 2) | (bucholzAlarm << 1) | prdTrigger
+            inputData[43] = inputData[43] / 10
         
         #Exhibition only
         if exhibitStat:

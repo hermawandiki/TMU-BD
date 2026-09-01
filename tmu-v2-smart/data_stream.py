@@ -39,7 +39,8 @@ class DataStream:
         cursor.execute("""
             SELECT impedance
             FROM transformer_data
-            WHERE trafoId = 1
+            ORDER BY trafoId DESC
+            LIMIT 1
         """)
         row1 = cursor.fetchone()
 
@@ -47,7 +48,7 @@ class DataStream:
         if row:
             result = list(row)
             result.append(row1[0] if row1 else None)  # Append impedance value
-            return row
+            return result
         return None
 
     def get_status(self):
@@ -258,7 +259,7 @@ class DataStream:
                          "K-Rated V      : ", "Derating V     : ", "K-Rated W      : ", "Derating W     : ",
                          "H2 Level (ppm) : ", "Moisture Level : ",
                          "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : ",
-                         "OLTC Tap Pos   : "]
+                         "OLTC Tap Pos        : "]
         textPropVal = [" "]*59
         for i, key in enumerate(keyVal):
             textPropVal[i] = key + str(values[i+1])

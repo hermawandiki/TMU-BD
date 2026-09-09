@@ -245,7 +245,12 @@ def main():
             inputData[39] = 0
         
         if OLTCstat:
-            tapPos = find_tap(round(analogIn2 * 0.06393945), source) + 1
+            # tapPos = find_tap(round(analogIn2 * 0.06393945), source) + 1
+            tapPos = round((analogIn2 / 1600) - 3.0)
+            if tapPos < 1:
+                tapPos = 1
+            elif tapPos > 17:
+                tapPos = 17
             cursor.execute(sqlLibrary.sqlUpdateTapPos, (tapPos,))
 
         if pressureStat:

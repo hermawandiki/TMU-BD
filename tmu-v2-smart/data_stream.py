@@ -44,11 +44,23 @@ class DataStream:
         """)
         row1 = cursor.fetchone()
 
+        cursor.execute("""
+            SELECT * 
+            FROM di_scan
+            WHERE number BETWEEN 0 AND 3
+            ORDER BY number ASC
+        """)
+        row2 = cursor.fetchall()
+
         cursor.close()
         if row:
             result = list(row)
             result.append(row1[0] if row1 else None)  # Append impedance value
+            for data in row2:
+                state = data[2]  # index 2 adalah kolom state
+                result.append(bool(state))
             return result
+            # print(result)
         return None
 
     def get_status(self):
@@ -83,196 +95,235 @@ class DataStream:
         textPropVal.insert(0, 0)
         textPropStat.insert(0, 0)
         colorPropStat.insert(0, 0)
-        # pages = {0: ([textPropVal[1], False, False], #Timestamp
-        #              [textPropVal[41], False, False], #Oil Temp. Val
-        #              [textPropStat[19], colorPropStat[19], False], #Oil Temp. Stat
-        #              [keySettings[0], False, False], #Oil Temp. Settings
-        #              [textPropVal[45], False, False], #Oil Pressure Val
-        #              [textPropStat[23], colorPropStat[23], False], #Oil Pressure Stat
-        #              [keySettings[1], False, False], #Oil Pressure Settings
-        #              [textPropVal[46], False, False], #Oil Level Val
-        #              [textPropStat[24], colorPropStat[24], False], #Oil Level Stat
-        #              [textPropVal[53], False, False], #H2 Level Val
-        #              [textPropStat[25], colorPropStat[25], False], #H2 Level Stat
-        #              [textPropVal[54], False, False], #Moisture Level Val
-        #              [textPropStat[26], colorPropStat[26], False]), #Moisture Level Stat
-        #          1: ([textPropVal[1], False, False], # Timestamp
-        #              [textPropVal[8], False, False], #Current U Val
-        #              [textPropStat[4], colorPropStat[4], False], #Current U Stat
-        #              [textPropVal[9], False, False], #Current V Val
-        #              [textPropStat[5], colorPropStat[5], False], #Current V Stat
-        #              [textPropVal[10], False, False], #Current W Val
-        #              [textPropStat[6], colorPropStat[6], False], #Current W Stat
-        #              [textPropVal[12], False, False], #Neutral Current Val
-        #              [textPropStat[7], colorPropStat[7], False], #Neutral Current
-        #              [textPropVal[5], False, False], #Voltage U-V Val
-        #              [textPropStat[1], colorPropStat[1], False], #Voltage U-V Stat
-        #              [textPropVal[6], False, False], #Voltage V-W Val
-        #              [textPropStat[2], colorPropStat[2], False]), #Voltage V-W Stat,
-        #          2: ([textPropVal[1], False, False], # Timestamp
-        #              [textPropVal[7], False, False], #Voltage W-U Val
-        #              [textPropStat[3], colorPropStat[3], False], #Voltage W-U Stat
-        #              [textPropVal[11], False, False], #Average Current Val
-        #              [textPropVal[22], False, False], #Total Active Power Val
-        #              [textPropVal[34], False, False], #Total Power Factor Val
-        #              [textPropVal[35], False, False], #Frequency Val
-        #              [textPropVal[2], False, False], #Voltage U-N Val
-        #              [textPropVal[3], False, False], #Voltage V-N Val
-        #              [textPropVal[4], False, False], #Voltage W-N Val
-        #              [" ", False, False],
-        #              [" ", False, False],
-        #              [" ", False, False]),
-        #          3: ([textPropVal[1], False, False],
-        #              [textPropVal[42], False, False], #WTI U Val
-        #              [textPropStat[20], colorPropStat[20], False], #WTI U Stat
-        #              [textPropVal[43], False, False], #WTI V Val
-        #              [textPropStat[21], colorPropStat[21], False], #WTI V Stat
-        #              [textPropVal[44], False, False], #WTI W Val
-        #              [textPropStat[22], colorPropStat[22], False], #WTI W Stat
-        #              [textPropVal[38], False, False], #Busbar U Val
-        #              [textPropStat[16], colorPropStat[16], False], #Busbar U Stat
-        #              [textPropVal[39], False, False], #Busbar V Val
-        #              [textPropStat[17], colorPropStat[17], False], #Busbar V Stat
-        #              [textPropVal[40], False, False], #Busbar W Val
-        #              [textPropStat[18], colorPropStat[18], False]) #Busbar W Stat
-        #              }
+
         pages = {
-            # HALAMAN 0: Suhu Oli, Tekanan, dan Lingkungan
             0: ([textPropVal[1], False, False], # Timestamp
-                [textPropVal[41], False, False], # Oil Temp. Val
-                [textPropStat[19], colorPropStat[19], False], # Oil Temp. Stat
-                [keySettings[0], False, False], # Oil Temp. Settings
-                [textPropVal[45], False, False], # Tank Pressure Val
-                [textPropStat[23], colorPropStat[23], False], # Tank Pressure Stat
-                [keySettings[1], False, False], # Tank Pressure Settings
-                [textPropVal[46], False, False], # Oil Level Val
-                [textPropStat[24], colorPropStat[24], False], # Oil Level Stat
-                [textPropVal[53], False, False], # H2 Level Val
-                [textPropStat[25], colorPropStat[25], False], # H2 Level Stat
-                [textPropVal[54], False, False], # Moisture Level Val
-                [textPropStat[26], colorPropStat[26], False]), # Moisture Level Stat
-            
-            # HALAMAN 1: Tegangan (Voltage) dan Frekuensi
-            1: ([textPropVal[1], False, False],
+                [textPropVal[2], False, False], # Voltage U-N Val
+                [textPropVal[3], False, False], # Voltage V-N Val
+                [textPropVal[4], False, False], # Voltage W-N Val
                 [textPropVal[5], False, False], # Voltage U-V Val
                 [textPropStat[1], colorPropStat[1], False], # Voltage U-V Stat
                 [textPropVal[6], False, False], # Voltage V-W Val
                 [textPropStat[2], colorPropStat[2], False], # Voltage V-W Stat
                 [textPropVal[7], False, False], # Voltage U-W Val
                 [textPropStat[3], colorPropStat[3], False], # Voltage U-W Stat
-                [textPropVal[2], False, False], # Voltage U-N Val
-                [textPropVal[3], False, False], # Voltage V-N Val
-                [textPropVal[4], False, False], # Voltage W-N Val
-                [textPropVal[35], False, False], # Frequency Val
-                [textPropStat[15], colorPropStat[15], False], # Frequency Stat
-                [" ", False, False]),
-            
-            # HALAMAN 2: Arus (Current)
-            2: ([textPropVal[1], False, False],
                 [textPropVal[8], False, False], # Current U Val
                 [textPropStat[4], colorPropStat[4], False], # Current U Stat
+                [" ", False, False]
+                ),
+            1: ([textPropVal[1], False, False], # Timestamp
                 [textPropVal[9], False, False], # Current V Val
                 [textPropStat[5], colorPropStat[5], False], # Current V Stat
                 [textPropVal[10], False, False], # Current W Val
                 [textPropStat[6], colorPropStat[6], False], # Current W Stat
-                [textPropVal[12], False, False], # Neutral Current Val
-                [textPropStat[7], colorPropStat[7], False], # Neutral Current Stat
                 [textPropVal[11], False, False], # Total Current Val
-                [" ", False, False],
-                [" ", False, False],
-                [" ", False, False]),
-            
-            # HALAMAN 3: Suhu Winding & Busbar (WTI & BTI)
-            3: ([textPropVal[1], False, False],
-                [textPropVal[42], False, False], # WTI U Val
-                [textPropStat[20], colorPropStat[20], False], # WTI U Stat
-                [textPropVal[43], False, False], # WTI V Val
-                [textPropStat[21], colorPropStat[21], False], # WTI V Stat
-                [textPropVal[44], False, False], # WTI W Val
-                [textPropStat[22], colorPropStat[22], False], # WTI W Stat
-                [textPropVal[38], False, False], # Busbar U Val
-                [textPropStat[16], colorPropStat[16], False], # Busbar U Stat
-                [textPropVal[39], False, False], # Busbar V Val
-                [textPropStat[17], colorPropStat[17], False], # Busbar V Stat
-                [textPropVal[40], False, False], # Busbar W Val
-                [textPropStat[18], colorPropStat[18], False]), # Busbar W Stat
-            
-            # HALAMAN 4: Power, Power Factor, & Energi
-            4: ([textPropVal[1], False, False],
-                [textPropVal[22], False, False], # Total Active Power
-                [textPropVal[26], False, False], # Total Reactive Power
-                [textPropVal[30], False, False], # Total Apparent Power
-                [textPropVal[34], False, False], # Total Power Factor
-                [textPropStat[14], colorPropStat[14], False], # Total PF Stat
-                [textPropVal[36], False, False], # Energy kWh
-                [textPropVal[37], False, False], # Energy kVARh
-                [textPropVal[13], False, False], # THDv Phase U
-                [textPropVal[14], False, False], # THDv Phase V
-                [textPropVal[15], False, False], # THDv Phase W
-                [textPropVal[58], False, False], # OLTC Tap Pos
-                [" ", False, False]),
-                
-            # HALAMAN 5: K-Rated, Derating, & Unbalance Voltage
-            5: ([textPropVal[1], False, False],
-                [textPropVal[55], False, False], # Voltage Unbalance UV
+                [textPropVal[12], False, False], # Current N Val
+                [textPropStat[7], colorPropStat[7], False], # Current N Stat
+                [textPropVal[13], False, False], # THDv Phase U Val
+                [textPropStat[8], colorPropStat[8], False], # THDv Phase U Stat
+                [textPropVal[14], False, False], # THDv Phase V Val
+                [textPropStat[9], colorPropStat[9], False], # THDv Phase V Stat
+                [" ", False, False]
+                ),
+            2: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[15], False, False], # THDv Phase W Val
+                [textPropStat[10], colorPropStat[10], False], # THDv Phase W Stat
+                [textPropVal[16], False, False], # THDi Phase U Val
+                [textPropStat[11], colorPropStat[11], False], # THDi Phase U Stat
+                [textPropVal[17], False, False], # THDi Phase V Val
+                [textPropStat[12], colorPropStat[12], False], # THDi Phase V Stat
+                [textPropVal[18], False, False], # THDi Phase W Val
+                [textPropStat[13], colorPropStat[13], False],  # THDi Phase W Stat
+                [textPropVal[19], False, False], # Active Power Pu Val
+                [textPropVal[20], False, False], # Active Power Pv Val
+                [textPropVal[21], False, False], # Active Power Pw Val
+                [textPropVal[22], False, False]  # Active Power Total Val
+                ),
+            3: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[23], False, False], # Reactive Power Qu Val
+                [textPropVal[24], False, False], # Reactive Power Qv Val
+                [textPropVal[25], False, False], # Reactive Power Qw Val
+                [textPropVal[26], False, False], # Reactive Power Total Val
+                [textPropVal[27], False, False], # Apparent Power Su Val
+                [textPropVal[28], False, False], # Apparent Power Sv Val
+                [textPropVal[29], False, False], # Apparent Power Sw Val
+                [textPropVal[30], False, False], # Apparent Power Total Val
+                [textPropVal[31], False, False], # Power Factor U Val
+                [textPropVal[32], False, False], # Power Factor V Val
+                [textPropVal[33], False, False], # Power Factor W Val
+                [" ", False, False]
+                ),
+            4: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[34], False, False], # Power Factor Total Val
+                [textPropStat[14], colorPropStat[14], False], # Power Factor Total Stat
+                [textPropVal[35], False, False], # Frequency Val
+                [textPropStat[15], colorPropStat[15], False], # Frequency Stat
+                [textPropVal[36], False, False], # Energy kWh Val
+                [textPropVal[37], False, False], # Energy kVARh Val
+                [textPropVal[38], False, False], # Busbar Temp U Val
+                [textPropStat[16], colorPropStat[16], False], # Busbar Temp U Stat
+                [textPropVal[39], False, False], # Busbar Temp V Val
+                [textPropStat[17], colorPropStat[17], False], # Busbar Temp V Stat
+                [textPropVal[40], False, False],  # Busbar Temp W Val
+                [textPropStat[18], colorPropStat[18], False]  # Busbar Temp W Stat
+                ),
+            5: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[41], False, False], # Oil Temperature Val
+                [textPropStat[19], colorPropStat[19], False], # Oil Temperature Stat
+                [keySettings[0], False, False], # Oil Temp. Settings
+                [textPropVal[42], False, False], # Winding Temp U Val
+                [textPropStat[20], colorPropStat[20], False], # Winding Temp U Stat
+                [textPropVal[43], False, False], # Winding Temp V Val
+                [textPropStat[21], colorPropStat[21], False], # Winding Temp V Stat
+                [textPropVal[44], False, False], # Winding Temp W Val
+                [textPropStat[22], colorPropStat[22], False], # Winding Temp W Stat
+                [textPropVal[45], False, False], # Oil Pressure Val
+                [textPropStat[23], colorPropStat[23], False], # Oil Pressure Stat
+                [keySettings[1], False, False], # Oil Pressure Settings
+                ),
+            6: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[46], False, False], # Oil Level Val
+                [textPropStat[24], colorPropStat[24], False], # Oil Level Stat
+                [textPropVal[47], False, False], # K-Rated U Val
+                [textPropVal[48], False, False], # Derating U Val
+                [textPropVal[49], False, False], # K-Rated V Val
+                [textPropVal[50], False, False], # Derating V Val
+                [textPropVal[51], False, False], # K-Rated W Val
+                [textPropVal[52], False, False], # Derating W Val
+                [textPropVal[53], False, False], # H2 Level (ppm) Val
+                [textPropStat[25], colorPropStat[25], False], # H2 Level (ppm) Stat
+                [textPropVal[54], False, False], # Moisture Level Val
+                [textPropStat[26], colorPropStat[26], False], # Moisture Level Stat
+                ),
+            7: ([textPropVal[1], False, False], # Timestamp
+                [textPropVal[55], False, False], # Unbalance UV Val
                 [textPropStat[27], colorPropStat[27], False], # Unbalance UV Stat
-                [textPropVal[56], False, False], # Voltage Unbalance VW
+                [textPropVal[56], False, False], # Unbalance VW Val
                 [textPropStat[28], colorPropStat[28], False], # Unbalance VW Stat
-                [textPropVal[57], False, False], # Voltage Unbalance UW
+                [textPropVal[57], False, False], # Unbalance UW Val
                 [textPropStat[29], colorPropStat[29], False], # Unbalance UW Stat
-                [textPropVal[47], False, False], # K-Rated U
-                [textPropVal[48], False, False], # Derating U
-                [textPropVal[49], False, False], # K-Rated V
-                [textPropVal[50], False, False], # Derating V
-                [textPropVal[51], False, False], # K-Rated W
-                [textPropVal[52], False, False])  # Derating W
+                [textPropVal[58], False, False], # OLTC Tap Pos Val
+                [textPropVal[59], False, False], # Reset Buzzer Status Val
+                [textPropVal[60], False, False], # PRD Trigger Status Val
+                [textPropVal[61], False, False], # Bucholz Alarm Status Val
+                [textPropVal[62], False, False], # Bucholz Trip Status Val
+                [" ", False, False]
+                )
         }
+
         result = pages.get(page, pages[0])
         return result
 
     def get_snapshot(self, page = 0):
         values = self.get_latest_values()
-        if not values or len(values) < 59:
+        # print(values)
+        if not values or len(values) < 63:
             return None
         status = self.get_status()
 
         oilSettings, pressSettings = self.get_settings()
-        oilSettingsTxt   = f"Temp. Alarm    : {oilSettings[0]} °C, Trip : {oilSettings[1]} °C"
-        pressSettingsTxt = f"Pres. Alarm    : {pressSettings[0]} bar, Trip : {pressSettings[1]} bar"
+        oilSettingsTxt   = f"    Oil Temp. Alarm        : {oilSettings[0]} °C, Trip : {oilSettings[1]} °C"
+        pressSettingsTxt = f"    Oil Pres. Alarm        : {pressSettings[0]} bar, Trip : {pressSettings[1]} bar"
         keySettings = [oilSettingsTxt, pressSettingsTxt]
 
         keyVal = ["Timestamp : ", 
-                         "Voltage U-N    : ", "Voltage V-N    : ", "Voltage W-N    : ",
-                         "Voltage U-V    : ", "Voltage V-W    : ", "Voltage U-W    : ",
-                         "Current U      : ", "Current V      : ", "Current W      : ", 
-                         "Total Current  : ", "Current N      : ",
-                         "THDv Phase U        : ", "THDv Phase V        : ", "THDv Phase W        : ",
-                         "THDi Phase U : ", "THDi Phase V : ", "THDi Phase W : ",
-                         "Active Power Pu : ", "Active Power Pv : ", "Active Power Pw : ", "Active Power Total  : ",
-                         "Reactive Power Qu : ", "Reactive Power Qv : ", "Reactive Power Qw : ", "Reactive Power Total: ",
-                         "Apparent Power Su : ", "Apparent Power Sv : ", "Apparent Power Sw : ", "Apparent Power Total: ",
-                         "Power Factor U : ", "Power Factor V : ", "Power Factor W : ", "Power Factor Total  : ",
-                         "Frequency      : ", "Energy kWh          : ", "Energy kVARh        : ", 
-                         "Busbar Temp U  : ", "Busbar Temp V  : ", "Busbar Temp W  : ",
-                         "Oil Temperature: ", "Winding Temp U : ", "Winding Temp V : ", "Winding Temp W : ",
-                         "Oil Pressure   : ", "Oil Level      : ", "K-Rated U      : ", "Derating U     : ", 
-                         "K-Rated V      : ", "Derating V     : ", "K-Rated W      : ", "Derating W     : ",
-                         "H2 Level (ppm) : ", "Moisture Level : ",
-                         "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : ",
-                         "OLTC Tap Pos        : "]
-        textPropVal = [" "]*59
+                "01. Voltage U-N            : ",
+                "02. Voltage V-N            : ",
+                "03. Voltage W-N            : ",
+                "04. Voltage U-V            : ",
+                "05. Voltage V-W            : ",
+                "06. Voltage U-W            : ",
+                "07. Current U              : ",
+                "08. Current V              : ",
+                "09. Current W              : ", 
+                "10. Total Current          : ",
+                "11. Current N              : ",
+                "12. THDv Phase U           : ",
+                "13. THDv Phase V           : ",
+                "14. THDv Phase W           : ",
+                "15. THDi Phase U           : ",
+                "16. THDi Phase V           : ", 
+                "17. THDi Phase W           : ",
+                "18. Active Power Pu        : ", 
+                "19. Active Power Pv        : ", 
+                "20. Active Power Pw        : ", 
+                "21. Active Power Total     : ",
+                "22. Reactive Power Qu      : ", 
+                "23. Reactive Power Qv      : ",
+                "24. Reactive Power Qw      : ", 
+                "25. Reactive Power Total   : ",
+                "26. Apparent Power Su      : ", 
+                "27. Apparent Power Sv      : ", 
+                "28. Apparent Power Sw      : ", 
+                "29. Apparent Power Total   : ",
+                "30. Power Factor U         : ", 
+                "31. Power Factor V         : ", 
+                "32. Power Factor W         : ", 
+                "33. Power Factor Total     : ",
+                "34. Frequency              : ", 
+                "35. Energy kWh             : ", 
+                "36. Energy kVARh           : ", 
+                "37. Busbar Temp U          : ", 
+                "38. Busbar Temp V          : ", 
+                "39. Busbar Temp W          : ",
+                "40. Oil Temperature        : ", 
+                "41. Winding Temp U         : ", 
+                "42. Winding Temp V         : ", 
+                "43. Winding Temp W         : ",
+                "44. Oil Pressure           : ", 
+                "45. Oil Level              : ", 
+                "46. K-Rated U              : ", 
+                "47. Derating U             : ", 
+                "48. K-Rated V              : ", 
+                "49. Derating V             : ", 
+                "50. K-Rated W              : ", 
+                "51. Derating W             : ",
+                "52. H2 Level (ppm)         : ", 
+                "53. Moisture Level         : ",
+                "54. Unbalance UV           : ", 
+                "55. Unbalance VW           : ", 
+                "56. Unbalance UW           : ",
+                "57. OLTC Tap Position      : ",
+                "58. Reset Buzzer Status    : ",
+                "59. PRD Trigger Status     : ",
+                "60. Bucholz Alarm Status   : ",
+                "61. Bucholz Trip Status    : "]
+
+        keyStat = ["    Voltage U-V status     : ",
+                "    Voltage V-W status     : ", 
+                "    Voltage U-W status     : ", 
+                "    Current U status       : ", 
+                "    Current V status       : ", 
+                "    Current W status       : ", 
+                "    Current N status       : ",
+                "    THDv U status          : ", 
+                "    THDv V status          : ", 
+                "    THDv W status          : ", 
+                "    THDi U status          : ", 
+                "    THDi V status          : ", 
+                "    THDi W status          : ", 
+                "    Power Factor status    : ", 
+                "    Frequency status       : ", 
+                "    Busbar U status        : ", 
+                "    Busbar V status        : ", 
+                "    Busbar W status        : ", 
+                "    Oil Temp. status       : ",
+                "    WTI U status           : ", 
+                "    WTI V status           : ", 
+                "    WTI W status           : ", 
+                "    Oil Pres. status       : ",
+                "    Oil Level status       : ", 
+                "    H2 Level status        : ", 
+                "    Moisture status        : ",
+                "    Unbalance UV status    : ", 
+                "    Unbalance VW status    : ", 
+                "    Unbalance UW status    : "]
+        
+        textPropVal = [" "]*63
         for i, key in enumerate(keyVal):
             textPropVal[i] = key + str(values[i+1])
 
         textPropStat = [" "]*29
-        keyStat = ["Volt. U-V stat : ", "Volt. V-W stat : ", "Volt. U-W stat : ", 
-               "Current U stat : ", "Current V stat : ", "Current W stat : ", "Current N stat : ",
-               "THDv U stat : ", "THDv V stat : ", "THDv W stat : ", "THDi U stat : ", "THDi V stat : ", "THDi W stat : ", 
-               "Power Factor stat   : ", "Frequency stat : ", 
-               "Busbar U stat  : ", "Busbar V stat  : ", "Busbar W stat  : ", "Oil Temp. stat : ",
-               "WTI U stat     : ", "WTI V stat     : ", "WTI W stat     : ", "Oil Pres. stat : ",
-               "Oil Level stat : ", "H2 Level stat  : ", "Moisture stat  : ",
-               "Unbalance UV stat: ", "Unbalance VW stat: ", "Unbalance UW stat: "]
         colorPropStat, blinkPropStat = [False]*29, [False]*29
         for i, stat in enumerate(status[:29]):
             if not status:

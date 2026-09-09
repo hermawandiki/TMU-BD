@@ -115,8 +115,8 @@ def main():
         
         if debugMsg == True: print("2D|3 Input definition, Update DB")
         pbStat = GPIO.input(13)
-        analogIn1 = 0 if adc.read_adc(3, gain = 1) < 0 else adc.read_adc(3, gain = 1)
-        analogIn2 = 0 if adc.read_adc(2, gain = 1) < 0 else adc.read_adc(2, gain = 1)
+        analogIn1 = 0 if adc.read_adc(3, gain = 2) < 0 else adc.read_adc(3, gain = 2)
+        analogIn2 = 0 if adc.read_adc(2, gain = 2) < 0 else adc.read_adc(2, gain = 2)
         
         cursor.execute(sqlUpdateDI, [pbStat, 0])
         cursor.execute(sqlUpdateDI, [GPIO.input(17), 1])

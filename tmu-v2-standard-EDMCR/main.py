@@ -8,10 +8,10 @@ import logging
 from toolboxTMU import initTkinter
 
 ts = time.strftime("%Y%m%d")
-logName = r'/home/pi/tmu-v2-standard-EDMCR/assets/sysdata-test/syslog-' + ts + '.log'
+logName = r'/home/pi/tmu-v2-smart/assets/sysdata-test/syslog-' + ts + '.log'
 logging.basicConfig(filename=logName, format='%(asctime)s | %(levelname)s: %(message)s', level=logging.DEBUG)
 
-os.chdir('/home/pi/tmu-v2-standard-EDMCR/')
+os.chdir('/home/pi/tmu-v2-smart/')
 
 class App:
     def __init__(self):
@@ -141,7 +141,7 @@ class App:
         try:
             self.terminate_procs()
             time.sleep(2)
-            os.execv(sys.executable, [sys.executable] + ['/home/pi/tmu-v2-bib/main.py'])
+            os.execv(sys.executable, [sys.executable] + ['/home/pi/tmu-v2-smart/main.py'])
         except Exception as e:
             logging.error(f"Error during restart: {e}")
 

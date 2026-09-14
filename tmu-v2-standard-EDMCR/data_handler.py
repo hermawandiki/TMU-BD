@@ -139,7 +139,7 @@ def main():
         time.sleep(0.2)
         getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
         try:
-            DMCRval = getDMCR.registers()
+            DMCRval = getDMCR.registers
         except:
             DMCRval = [0, 0, 0, 4]
         

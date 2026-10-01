@@ -32,7 +32,7 @@ def testBatch():
     getTemp = client.read_holding_registers(4, 3, slave = 3)
     print("Read Wireless Temperature Sensor")  
     print(getTemp.registers)
-    getElect1 = client.read_holding_registers(0, 29, slave = 2)
+    getElect1 = client.read_holding_registers(37, 34, slave = 2)
     print("Read Power Meter 1")
     print(getElect1.registers) 
     if doubleMeter:
@@ -44,7 +44,6 @@ def testBatch():
         print("Read Winding Temperature")
         print(getWinding.registers) 
     if gasState:
-
         getH2 = client2.read_holding_registers(0, 10, slave = 4)
         print(getH2.registers)
         getMoist = client2.read_input_registers(0, 3, slave = 5)

@@ -50,7 +50,7 @@ def main():
     if infoMsg == True: print("1D|Initialize Program") 
     dataLen = 56
     watchedData = 29
-    CTratio = 1
+    CTratio = 800
     PTratio = 1
     eddyLosesGroup = 0.02
     designedKrated = 1
@@ -191,24 +191,24 @@ def main():
         time.sleep(0.2)
         getTemp = client.read_holding_registers(4, 3, slave = 3)
         time.sleep(0.2)
-        getElect1 = client.read_holding_registers(0, 29, slave = 2)
+        getElect1 = client.read_holding_registers(37, 34, slave = 2)
         time.sleep(0.2)
-        getElect2 = client.read_holding_registers(46, 5, slave = 2)
+        getElect2 = client.read_holding_registers(1024, 6, slave = 2)
         time.sleep(0.2)
-        getElect3 = client.read_holding_registers(800, 6, slave = 2)
+        # getElect3 = client.read_holding_registers(800, 6, slave = 2)
+        # time.sleep(0.2)
+        getHarmV = client.read_holding_registers(1036, 90, slave = 2)
         time.sleep(0.2)
-        getHarmV = client.read_holding_registers(806, 90, slave = 2)
-        time.sleep(0.2)
-        getHarmI = client.read_holding_registers(896, 90, slave = 2)
+        getHarmI = client.read_holding_registers(1126, 90, slave = 2)
         time.sleep(0.2)
         if gasType :
             getH2 = client.read_holding_registers(0, 1, slave = 4)
             getMoist = client.read_input_registers(0, 3, slave = 5)
             if debugMsg == True: print("1D|4b Parse Data")
-            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, getMoist, dataLen, CTratio, PTratio)
+            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, 0, getH2, getMoist, dataLen, CTratio, PTratio)
         else :
             if debugMsg == True: print("1D|4b Parse Data")
-            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, 0, 0, dataLen, CTratio, PTratio)
+            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, 0, 0, 0, dataLen, CTratio, PTratio)
         if dryType :
             getTemp2 = client.read_holding_registers(0, 3, slave = 7)
             try :
@@ -379,7 +379,7 @@ def main():
                     if infoMsg == True: print("1D|Alert sent to API successfully")
                 except Timeout:
                     if infoMsg == True: print("1D|e: API Message Timeout")
-                except RequestException as e:
+                except RequestException as Argument:
                     if infoMsg == True: print("1D|%s" % Argument)
                     if infoMsg == True: print("1D|e: API Message Error")
             #print("Send Telegram Lhooo")

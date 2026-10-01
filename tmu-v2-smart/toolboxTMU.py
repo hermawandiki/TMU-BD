@@ -203,19 +203,25 @@ def dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, get
         pass
     #parse getElect1
     try:
+        teta = [0]*3
         for i in range(0, 3):
-            outputData[i] = (PTratio * getElect1.registers[i])/100 #Voltage Phase Neutral
-            outputData[i + 3] = (PTratio * getElect1.registers[i+3])/100 #Voltage Phase Phase
-            outputData[i + 6] = (CTratio * getElect1.registers[i+6])/1000 #Current
-            outputData[i + 29] = (signedInt16Handler(getElect1.registers[i+21]))/1000 #PF
-            outputData[i + 17] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[i+15]))/10 #P
-            outputData[i + 21] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[i+18]))/10 #Q
-        outputData[10] = (CTratio * getElect1.registers[9])/1000 #Neutral Current
-        outputData[20] = (CTratio * PTratio * (signedInt32Handler(getElect1.registers[10:12]))[0])/10 #Psig
-        outputData[24] = (CTratio * PTratio * (signedInt32Handler(getElect1.registers[12:14]))[0])/10 #Qsig
-        outputData[33] = (getElect1.registers[24])/100 #Frequency 
-        outputData[34] = (unsignedInt32Handler(getElect1.registers[25:27]))/10 #kWh
-        outputData[35] = (unsignedInt32Handler(getElect1.registers[27:]))/10 #kVARh
+            outputData[i] = (PTratio * getElect1.registers[i])/10 #Voltage Phase Neutral
+            outputData[i + 3] = (PTratio * getElect1.registers[i+3])/10 #Voltage Phase Phase
+            outputData[i + 6] = getElect1.registers[i+6] #Current
+            outputData[i + 29] = (signedInt16Handler(getElect1.registers[i+17]))/1000 #PF
+            teta[i] = math.acos(outputData[i + 29])
+            outputData[i + 17] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[i+9]))/1000 #P
+            outputData[i + 21] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[i+13]))/1000 #Q
+            outputData[i + 17] = (round(100 * (outputData[i] * outputData[i + 6] * outputData[i + 29])))/100
+            outputData[i + 21] = (round(100 * (outputData[i] * outputData[i + 6] * math.sin(teta[i]))))/100
+        outputData[10] = 0 #Neutral Current
+        outputData[20] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[12]))/1000 #Psig
+        outputData[20] = outputData[17] + outputData[18] + outputData[19]
+        outputData[24] = (CTratio * PTratio * signedInt16Handler(getElect1.registers[16]))/1000 #Qsig
+        outputData[24] = outputData[21] + outputData[22] + outputData[23]
+        outputData[33] = (getElect1.registers[25])/100 #Frequency 
+        outputData[34] = CTratio * PTratio * (((getElect1.registers[26] * 65536) + getElect1.registers[27])/1000) #kWh
+        outputData[35] = CTratio * PTratio * (((getElect1.registers[30] * 65536) + getElect1.registers[31])/1000) #kVARh
         outputData[32] = (outputData[29] + outputData[30] + outputData[31])/3 #Average PF
         outputData[9] = (outputData[6] + outputData[7] + outputData[8])/3 #Average Current
         outputData[53] = abs(outputData[0] - outputData[1]) #Gap Voltage Un-Vn
@@ -223,18 +229,20 @@ def dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, get
         outputData[55] = abs(outputData[0] - outputData[2]) #Gap Voltage Un-Wn
     except:
         pass
+    #parse getElect1
+    try:
+        for i in range(0, 3):
+            outputData[i + 25] = (CTratio * PTratio * (getElect1.registers[i + 21])/1000) #S
+            outputData[i + 25] = outputData[i] * outputData[i + 6]
+        outputData[28] = CTratio * PTratio * (getElect1.registers[i + 21])/1000 #Ssig
+        outputData[28] = outputData[25] + outputData[26] + outputData[27]
+    except:
+        pass
     #parse getElect2
     try:
         for i in range(0, 3):
-            outputData[i + 25] = (CTratio * PTratio * (getElect2.registers[i])/10) #S
-        outputData[28] = (CTratio * PTratio * (unsignedInt32Handler(getElect2.registers[3:]))/10) #Ssig
-    except:
-        pass
-    #parse getElect3
-    try:
-        for i in range(0, 3):
-            outputData[i + 11] = (getElect3.registers[i])/10 #THD Voltage
-            outputData[i + 14] = (getElect3.registers[i+3])/10 #THD Current
+            outputData[i + 11] = (getElect2.registers[i])/100 #THD Voltage
+            outputData[i + 14] = (getElect2.registers[i+3])/100 #THD Current
     except:
         pass
     #parse getH2 and getMoist
@@ -250,6 +258,7 @@ def dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, get
         outputData = randomify(dataLen)
 
     return outputData
+
 
 def randomify(dataLen):
     outputData = [0]*dataLen
@@ -305,21 +314,24 @@ def randomify(dataLen):
         pass
     return outputData
 
-def harmonicParser(inputArg):
+def harmonicParser(inputArg, scale=100):
     try:
-        inputList = [inputArg.registers[0:30], inputArg.registers[30:60], inputArg.registers[60:]]
-        outputList = [[0]*15, [0]*15, [0]*15]
-        harmIndex = 0
-        for i in range(0, 3):
-            for j in range(0, len(outputList[i])):
-                if j % 2 == 1:
-                    outputList[i][harmIndex] = (inputList[i][j])/10
-                    harmIndex = harmIndex + 1
+        inputList = [
+            inputArg.registers[0:30],
+            inputArg.registers[30:60],
+            inputArg.registers[60:90]
+        ]
+        outputList = [[0] * 15 for _ in range(3)]
+        for i in range(3):
             harmIndex = 0
+            for j in range(0, 30):
+                if j % 2 == 1:
+                    outputList[i][harmIndex] = inputList[i][j] / scale
+                    harmIndex += 1
             outputList[i].insert(0, 100)
-    except:
-        outputList = [[0]*16, [0]*16, [0]*16]
-    return outputList
+        return outputList
+    except Exception:
+        return [[0] * 16 for _ in range(3)]
 
 def signedInt16Handler(data):
     if data > (math.pow(2, 16))/2:

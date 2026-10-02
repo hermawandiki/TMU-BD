@@ -74,7 +74,7 @@ class DisplayGUI:
         self.timeThen = time.time()
 
         oled_init()
-        oled_print(f"TMU PT DJARUM\nIP ETH: {TMU_IP}")
+        oled_print(f"TMU FAJAR PAPER\nIP ETH: {TMU_IP}")
 
         self.btn_exit = tk.Button(
             self.root,

@@ -321,6 +321,19 @@ def harmonicParser(inputArg):
         outputList = [[0]*16, [0]*16, [0]*16]
     return outputList
 
+def efficiencyParser(inputArg):
+    try:
+        cosPhi = 1.0
+        capacity, ratedCurrentLowVoltage, noLoadLoss, fullLoadLoss, Iavg = inputArg
+
+        # loadLoss = Iavg / ratedCurrentLowVoltage / fullLoadLoss
+        loadLoss = fullLoadLoss * (Iavg / ratedCurrentLowVoltage) ** 2
+        result = (1 - (noLoadLoss + loadLoss) / (capacity * cosPhi * 1000 + noLoadLoss + loadLoss)) * 100
+        
+        return math.floor(result * 100)/100
+    except:
+        return 0
+
 def signedInt16Handler(data):
     if data > (math.pow(2, 16))/2:
         data = data - math.pow(2, 16)
@@ -395,7 +408,7 @@ def convertBinList(stateDI, stateDO, tripStatus):
     binList[3] = binaryToDecimal(binTrip1)
     binList[4] = binaryToDecimal(binTrip2)
 
-    return binList
+    return binList 
 
 class sqlLibrary():
     sqlTrafoSetting = "SELECT * FROM transformer_settings"

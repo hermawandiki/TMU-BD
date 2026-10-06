@@ -9,6 +9,7 @@ from tkinter.scrolledtext import ScrolledText
 import threading
 import mysql.connector
 import datetime, sys
+from toolboxTMU import efficiencyParser
 
 debugMsg = False
 infoMsg = True
@@ -44,7 +45,7 @@ def signed16bit(value):
     return value & 0xFFFF
 
 def dataStore(data):
-    storage = [0]*80
+    storage = [0]*81
     # print(data)
     #Voltage
     for i in range(0, 6): 
@@ -109,6 +110,9 @@ def dataStore(data):
     for i in range(0, 3): 
         data[i+53] = round(data[i+53]*10)
         storage[i*2 + 74], storage[i*2 + 73] = unsigned32bit(data[i+53])
+    #Efficiency
+    data[56] = round(data[56]*100)
+    storage[80] = data[56]
     return storage
 
 def gatherValues():
@@ -119,6 +123,25 @@ def gatherValues():
     listResult = list(result[0])
     listResult.pop(0)
     listResult.pop(0)
+
+    cursor.execute("""
+        SELECT ratedPower, ratedCurrentLowVoltage, noLoadLoss, fullLoadLoss
+        FROM transformer_data
+    """)
+    param = cursor.fetchone()
+
+    cursor.execute("""
+        SELECT Iavg
+        FROM reading_data
+        ORDER BY data_id DESC
+        LIMIT 1
+    """)
+    Iavg = cursor.fetchone()
+
+    inputArg = [*param, Iavg[0]]
+    efficiency = efficiencyParser(inputArg)
+    listResult.append(efficiency)
+
     db.commit()
     # print(listResult)
     return dataStore(listResult)

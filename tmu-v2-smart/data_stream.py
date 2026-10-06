@@ -1,4 +1,5 @@
 import mysql.connector
+from toolboxTMU import efficiencyParser
 
 class DataStream:
     def __init__(self):
@@ -35,9 +36,30 @@ class DataStream:
             LIMIT 1
         """)
         row = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT ratedPower, ratedCurrentLowVoltage, noLoadLoss, fullLoadLoss
+            FROM transformer_data
+        """)
+        param = cursor.fetchone()
+
+        cursor.execute("""
+            SELECT Iavg
+            FROM reading_data
+            ORDER BY data_id DESC
+            LIMIT 1
+        """)
+        Iavg = cursor.fetchone()
+
+        inputArg = [*param, Iavg[0]]
+        efficiency = efficiencyParser(inputArg)
+        # print(f"Efficiency: {efficiency}%")
+
         cursor.close()
         if row:
-            return row
+            result = list(row)
+            result.append(efficiency if efficiency is not None else 0)
+            return result
         return None
 
     def get_status(self):
@@ -167,7 +189,7 @@ class DataStream:
                 [textPropVal[12], False, False], # Neutral Current Val
                 [textPropStat[7], colorPropStat[7], False], # Neutral Current Stat
                 [textPropVal[11], False, False], # Total Current Val
-                [" ", False, False],
+                [textPropVal[58], False, False], # Efficiency Val
                 [" ", False, False],
                 [" ", False, False]),
             
@@ -221,7 +243,7 @@ class DataStream:
 
     def get_snapshot(self, page = 0):
         values = self.get_latest_values()
-        if not values or len(values) < 58:
+        if not values or len(values) < 59:
             return None
         status = self.get_status()
 
@@ -247,8 +269,8 @@ class DataStream:
                          "Oil Pressure   : ", "Oil Level      : ", "K-Rated U      : ", "Derating U     : ", 
                          "K-Rated V      : ", "Derating V     : ", "K-Rated W      : ", "Derating W     : ",
                          "H2 Level (ppm) : ", "Moisture Level : ",
-                         "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : "]
-        textPropVal = [" "]*58
+                         "Unbalance UV   : ", "Unbalance VW   : ", "Unbalance UW   : ", "Efficiency     : "]
+        textPropVal = [" "]*59
         for i, key in enumerate(keyVal):
             textPropVal[i] = key + str(values[i+1])
 

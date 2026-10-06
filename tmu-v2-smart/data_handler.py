@@ -50,7 +50,7 @@ def main():
     if infoMsg == True: print("1D|Initialize Program") 
     dataLen = 56
     watchedData = 29
-    CTratio = 800
+    CTratio = 1
     PTratio = 1
     eddyLosesGroup = 0.02
     designedKrated = 1

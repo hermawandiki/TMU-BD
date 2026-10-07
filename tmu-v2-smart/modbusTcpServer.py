@@ -112,7 +112,7 @@ def dataStore(data):
         storage[i*2 + 74], storage[i*2 + 73] = unsigned32bit(data[i+53])
     #Efficiency
     data[56] = round(data[56]*100)
-    storage[80] = data[56]
+    storage[79] = data[56]
     return storage
 
 def gatherValues():

@@ -40,10 +40,10 @@ def main():
     #init logger rawdata
     ts = time.strftime("%Y%m%d")
     pathStr = r'/home/pi/tmu/tmu-app-client-deploy/assets/datalog/rawdata/datalogger-'
-    #pathStr = r'/home/pi/tmu-v2-smart/assets/rawdata-test/datalogger-'
+    #pathStr = r'/home/pi/tmu-v2-standard-EDMCR/assets/rawdata-test/datalogger-'
     pathDatLog = pathStr + ts + '.xlsx'
     sheetName = ["Harmonic_phR", "Harmonic_phS", "Harmonic_phT"]
-    pathBkup = r'/home/pi/tmu-v2-smart/assets/rawdata-test/backup/datalogger-backup-'
+    pathBkup = r'/home/pi/tmu-v2-standard-EDMCR/assets/rawdata-test/backup/datalogger-backup-'
     pathDatBkup = pathBkup + ts + '.xlsx'
      
     try:

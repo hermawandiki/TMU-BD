@@ -141,7 +141,7 @@ class App:
         try:
             self.terminate_procs()
             time.sleep(2)
-            os.execv(sys.executable, [sys.executable] + ['/home/pi/tmu-v2-bib/main.py'])
+            os.execv(sys.executable, [sys.executable] + ['/home/pi/tmu-v2-standard-EDMCR/main.py'])
         except Exception as e:
             logging.error(f"Error during restart: {e}")
 

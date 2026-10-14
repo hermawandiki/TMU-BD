@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pymodbus.client import ModbusSerialClient
 from time import sleep
+import math
 
 client = ModbusSerialClient(method='rtu', port='/dev/ttyACM0', baudrate=9600)
 loop = False

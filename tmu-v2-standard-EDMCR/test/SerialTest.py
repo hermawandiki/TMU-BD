@@ -18,7 +18,7 @@ def testBatch():
     try:
         DMCRval = getDMCR.registers
     except Exception as e:
-	    print("iki error kangg -> {e}")
+	    print(f"iki error kangg -> {e}")
         DMCRval = [0, 0, 0, 4]
 
     oilLevelAlarm = 1 if DMCRval[3]<=3 else 0

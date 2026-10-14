@@ -1,6 +1,6 @@
 #from pymodbus.client import ModbusSerialClient
 from pymodbus.client import ModbusSerialClient
-from toolboxTMU import parameter, sqlLibrary, find_tap, initParameter, dataParser, harmonicParser, convertBinList
+from toolboxTMU import parameter, sqlLibrary, find_tap, initParameter, dataParser, harmonicParser, convertBinList, signedInt16Handler
 from openpyxl import Workbook
 import requests
 import mysql.connector, time, datetime, math, openpyxl, sys, shutil, os
@@ -17,6 +17,7 @@ infoMsg = True
 dryType = False
 gasType = False
 transmitterModeMinus = False
+edmcrType = False
 
 exhibitStat = False
 OLTCstat = False
@@ -201,6 +202,12 @@ def main():
         time.sleep(0.2)
         getHarmI = client.read_holding_registers(896, 90, slave = 2)
         time.sleep(0.2)
+        if edmcrType:
+            getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
+            try:
+                DMCRval = getDMCR.registers
+            except:
+                DMCRval = [0, 0, 0, 4] 
         if gasType :
             getH2 = client.read_holding_registers(0, 1, slave = 4)
             getMoist = client.read_input_registers(0, 3, slave = 5)
@@ -219,10 +226,16 @@ def main():
                 pass
         
         if debugMsg == True: print("1D|5 Read Input IO")
-        oilLevelAlarm = inputIO[4][2]
-        oilLevelTrip = inputIO[5][2]
-        analogIn1 = inputIO[6][2]
-        analogIn2 = inputIO[7][2]
+        if edmcrType:
+            oilLevelAlarm = 1 if DMCRval[3]<=3 else 0
+            oilLevelTrip = 1 if DMCRval[3]==1 else 0
+            analogIn1 = (signedInt16Handler(DMCRval[1]))/10
+            analogIn2 = (signedInt16Handler(DMCRval[0]))/1000
+        else:
+            oilLevelAlarm = inputIO[4][2]
+            oilLevelTrip = inputIO[5][2]
+            analogIn1 = inputIO[6][2]
+            analogIn2 = inputIO[7][2]
 
         if (oilLevelAlarm and oilLevelTrip) or oilLevelTrip:
             oilStat = 1
@@ -233,11 +246,14 @@ def main():
         inputData[44] = oilStat     #Oil Level
 
         if tempStat :
-            if transmitterModeMinus :
-                suhu = round(((analogIn1 * 0.009537) - 112.5), 3)
+            if edmcrType:
+                inputData[39] = analogIn1
             else:
-                suhu = round(((analogIn1 * 0.007630) - 50), 3)
-            inputData[39] = max(0, suhu)
+                if transmitterModeMinus :
+                    suhu = round(((analogIn1 * 0.009537) - 112.5), 3)
+                else:
+                    suhu = round(((analogIn1 * 0.007630) - 50), 3)
+                inputData[39] = max(0, suhu)
         else : 
             inputData[39] = 0
         
@@ -246,7 +262,10 @@ def main():
             cursor.execute(sqlLibrary.sqlUpdateTapPos, (tapPos,))
 
         if pressureStat:
-            inputData[43] = (analogIn2 - 6553) / 26214
+            if edmcrType:
+                inputData[43] = analogIn2
+            else:
+                inputData[43] = (analogIn2 - 6553) / 26214
         else:
             inputData[43] = 0
         

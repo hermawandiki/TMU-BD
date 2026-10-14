@@ -94,59 +94,7 @@ class DataStream:
         textPropVal.insert(0, 0)
         textPropStat.insert(0, 0)
         colorPropStat.insert(0, 0)
-        # pages = {0: ([textPropVal[1], False, False], #Timestamp
-        #              [textPropVal[41], False, False], #Oil Temp. Val
-        #              [textPropStat[19], colorPropStat[19], False], #Oil Temp. Stat
-        #              [keySettings[0], False, False], #Oil Temp. Settings
-        #              [textPropVal[45], False, False], #Oil Pressure Val
-        #              [textPropStat[23], colorPropStat[23], False], #Oil Pressure Stat
-        #              [keySettings[1], False, False], #Oil Pressure Settings
-        #              [textPropVal[46], False, False], #Oil Level Val
-        #              [textPropStat[24], colorPropStat[24], False], #Oil Level Stat
-        #              [textPropVal[53], False, False], #H2 Level Val
-        #              [textPropStat[25], colorPropStat[25], False], #H2 Level Stat
-        #              [textPropVal[54], False, False], #Moisture Level Val
-        #              [textPropStat[26], colorPropStat[26], False]), #Moisture Level Stat
-        #          1: ([textPropVal[1], False, False], # Timestamp
-        #              [textPropVal[8], False, False], #Current U Val
-        #              [textPropStat[4], colorPropStat[4], False], #Current U Stat
-        #              [textPropVal[9], False, False], #Current V Val
-        #              [textPropStat[5], colorPropStat[5], False], #Current V Stat
-        #              [textPropVal[10], False, False], #Current W Val
-        #              [textPropStat[6], colorPropStat[6], False], #Current W Stat
-        #              [textPropVal[12], False, False], #Neutral Current Val
-        #              [textPropStat[7], colorPropStat[7], False], #Neutral Current
-        #              [textPropVal[5], False, False], #Voltage U-V Val
-        #              [textPropStat[1], colorPropStat[1], False], #Voltage U-V Stat
-        #              [textPropVal[6], False, False], #Voltage V-W Val
-        #              [textPropStat[2], colorPropStat[2], False]), #Voltage V-W Stat,
-        #          2: ([textPropVal[1], False, False], # Timestamp
-        #              [textPropVal[7], False, False], #Voltage W-U Val
-        #              [textPropStat[3], colorPropStat[3], False], #Voltage W-U Stat
-        #              [textPropVal[11], False, False], #Average Current Val
-        #              [textPropVal[22], False, False], #Total Active Power Val
-        #              [textPropVal[34], False, False], #Total Power Factor Val
-        #              [textPropVal[35], False, False], #Frequency Val
-        #              [textPropVal[2], False, False], #Voltage U-N Val
-        #              [textPropVal[3], False, False], #Voltage V-N Val
-        #              [textPropVal[4], False, False], #Voltage W-N Val
-        #              [" ", False, False],
-        #              [" ", False, False],
-        #              [" ", False, False]),
-        #          3: ([textPropVal[1], False, False],
-        #              [textPropVal[42], False, False], #WTI U Val
-        #              [textPropStat[20], colorPropStat[20], False], #WTI U Stat
-        #              [textPropVal[43], False, False], #WTI V Val
-        #              [textPropStat[21], colorPropStat[21], False], #WTI V Stat
-        #              [textPropVal[44], False, False], #WTI W Val
-        #              [textPropStat[22], colorPropStat[22], False], #WTI W Stat
-        #              [textPropVal[38], False, False], #Busbar U Val
-        #              [textPropStat[16], colorPropStat[16], False], #Busbar U Stat
-        #              [textPropVal[39], False, False], #Busbar V Val
-        #              [textPropStat[17], colorPropStat[17], False], #Busbar V Stat
-        #              [textPropVal[40], False, False], #Busbar W Val
-        #              [textPropStat[18], colorPropStat[18], False]) #Busbar W Stat
-        #              }
+        
         pages = {
             # HALAMAN 0: Suhu Oli, Tekanan, dan Lingkungan
             0: ([textPropVal[1], False, False], # Timestamp

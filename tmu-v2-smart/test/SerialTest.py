@@ -10,6 +10,7 @@ relayState = False
 doubleMeter = False
 dryType = False
 gasState = False
+edmcrType = False
 
 def testBatch():
     if relayTest:
@@ -28,7 +29,6 @@ def testBatch():
         writeRly = client.write_coil(4, relayState, slave = 1)
         print("Write " + str(relayState) + " to Relay CH4")
         print(writeRly)
-    
     getTemp = client.read_holding_registers(4, 3, slave = 3)
     print("Read Wireless Temperature Sensor")  
     print(getTemp.registers)
@@ -44,11 +44,16 @@ def testBatch():
         print("Read Winding Temperature")
         print(getWinding.registers) 
     if gasState:
-
         getH2 = client2.read_holding_registers(0, 10, slave = 4)
+        print("Read H2 Gas Sensor")
         print(getH2.registers)
         getMoist = client2.read_input_registers(0, 3, slave = 5)
+        print("Read Moisture Sensor")
         print(getMoist.registers)
+    if edmcrType:
+        getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
+        print("Read E-DMCR Registers")
+        print(getDMCR.registers)
     print("~~~")
 
 if loop:

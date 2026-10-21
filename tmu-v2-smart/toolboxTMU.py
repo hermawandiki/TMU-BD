@@ -3,6 +3,7 @@ from threading import Timer, Lock
 import json
 import math
 import random
+import struct
 
 class parameter:
     def __init__(self, name, value, isWatched, highAlarm, lowAlarm, highTrip, lowTrip, status, trafoStat):
@@ -251,6 +252,52 @@ def dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, get
 
     return outputData
 
+def dataParserPM2100(exhibitStat, getTemp, getVoltage, getCurrent, getPower, getFreq, getWh, getVARh, getTHDi, getTHDv, dataLen, CTratio, PTratio):
+    outputData = [0]*dataLen
+    #parse getTemp
+    try:
+        outputData[36:39] = [(0 if member > 2400 else member/10) for member in getTemp.registers] #Busbar Temp
+    except:
+        pass
+    #parse getVoltage, getCurrent, getPower, getFreq, getWh, getVARh, getTHDi, getTHDv
+    try:
+        for i in range(0, 3):
+            outputData[i] = float32Handler(getVoltage.registers[(i*2)+8:(i*2)+10]) #Voltage Phase Neutral
+            outputData[i + 3] = float32Handler(getVoltage.registers[i*2:(i*2)+2]) #Voltage Phase Phase
+            outputData[i + 6] = float32Handler(getCurrent.registers[i*2:(i*2)+2]) #Current
+            outputData[i + 11] = float32Handler(getTHDv.registers[i*2:(i*2)+2]) #THD Voltage
+            outputData[i + 14] = float32Handler(getTHDi.registers[i*2:(i*2)+2]) #THD Current
+            outputData[i + 17] = float32Handler(getPower.registers[(i*2):(i*2)+2]) #Active Power (P)
+            outputData[i + 21] = float32Handler(getPower.registers[(i*2)+8:(i*2)+10]) #Reactive Power (Q)
+            outputData[i + 25] = float32Handler(getPower.registers[(i*2)+16:(i*2)+18]) #Apparent Power (S)
+            outputData[i + 29] = float4QHandler(getPower.registers[(i*2)+24:(i*2)+26]) #Power Factor (PF)
+        outputData[9] = (outputData[6] + outputData[7] + outputData[8])/3 #Average Current
+        outputData[10] = float32Handler(getCurrent.registers[6:8]) #Neutral Current
+        outputData[20] = float32Handler(getPower.registers[6:8]) #Total Active Power (Psig)
+        outputData[24] = float32Handler(getPower.registers[14:16]) #Total Reactive Power (Qsig)
+        outputData[28] = float32Handler(getPower.registers[22:24]) #Total Apparent Power (Ssig)
+        outputData[32] = (outputData[29] + outputData[30] + outputData[31])/3 #Average PF
+        outputData[33] = float32Handler(getFreq.registers[0:2]) #Frequency
+        outputData[34] = int64Handler(getWh.registers[0:5]) #kWh
+        outputData[35] = int64Handler(getVARh.registers[0:5]) #kVARh
+        outputData[53] = abs(outputData[0] - outputData[1]) #Gap Voltage Un-Vn
+        outputData[54] = abs(outputData[1] - outputData[2]) #Gap Voltage Vn-Wn
+        outputData[55] = abs(outputData[0] - outputData[2]) #Gap Voltage Un-Wn
+    except:
+        pass
+    #parse getH2 and getMoist
+    try:
+        outputData[51] = 0
+        outputData[52] = 0
+        outputData[39] = 0
+    except:
+        pass
+    #Exhibition only
+    if exhibitStat:
+        outputData = randomify(dataLen)
+
+    return outputData
+
 def randomify(dataLen):
     outputData = [0]*dataLen
     #randomify getTemp
@@ -321,6 +368,20 @@ def harmonicParser(inputArg):
         outputList = [[0]*16, [0]*16, [0]*16]
     return outputList
 
+def harmonicParserPM2100(getHarmA, getHarmB, getHarmC):
+    try: 
+        inputList = [getHarmA, getHarmB, getHarmC]
+        outputList = []
+        for i in range(0, 3):
+            registers = inputList[i].registers
+            for j in range(15):
+                index = j * 6
+                value = float32Handler(registers[index:index + 2])
+                outputList[i].append(value)
+    except:
+        outputList = [[0]*16, [0]*16, [0]*16]
+    return outputList
+
 def efficiencyParser(inputArg):
     try:
         cosPhi = 1.0
@@ -360,6 +421,38 @@ def unsignedInt32Handler(dataset):
         while len(hexData[i]) < 4: hexData[i] = "0" + hexData[i]
     tempData = int((hexData[1] + hexData[0]),16)
     return tempData
+
+def float32Handler(registers):
+    if len(registers) != 2:
+        raise ValueError("FLOAT32 butuh 2 register cak...")
+    raw = (registers[0] << 16) | registers[1]
+    return struct.unpack(">f", raw.to_bytes(4, byteorder="big"))[0]
+
+def int64Handler(registers):
+    if len(registers) != 4:
+        raise ValueError("INT64 butuh 4 register cak...")
+    raw = 0
+    for register in registers:
+        raw = (raw << 16) | register
+    if raw & (1 << 63):
+        raw -= 1 << 64
+    return raw
+
+def float4QHandler(registers):
+    reg_val = float32Handler(registers)
+    if reg_val > 1:
+        pf_val = 2 - reg_val
+        status = "leading"
+    elif reg_val < -1:
+        pf_val = -2 - reg_val
+        status = "leading"
+    elif abs(reg_val) == 1:
+        pf_val = reg_val
+        status = "unity"
+    else:
+        pf_val = reg_val
+        status = "lagging"
+    return pf_val
 
 def binaryToDecimal(binaryList):
     decimal = 0

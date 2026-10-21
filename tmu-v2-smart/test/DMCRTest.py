@@ -17,10 +17,9 @@ def testBatch():
     getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
     try:
         DMCRval = getDMCR.registers
-    except Exception as e:
-	    print(f"iki error kangg -> {e}")
+    except:
         DMCRval = [0, 0, 0, 4]
-    
+
     oilLevelAlarm = 1 if DMCRval[3]<=3 else 0
     oilLevelTrip = 1 if DMCRval[3]==1 else 0
     analogIn1 = (signedInt16Handler(DMCRval[1]))/10

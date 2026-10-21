@@ -1,6 +1,6 @@
 #from pymodbus.client import ModbusSerialClient
 from pymodbus.client import ModbusSerialClient
-from toolboxTMU import parameter, sqlLibrary, find_tap, initParameter, dataParser, harmonicParser, convertBinList, signedInt16Handler
+from toolboxTMU import parameter, sqlLibrary, find_tap, initParameter, dataParserPM2100, harmonicParserPM2100, convertBinList, signedInt16Handler
 from openpyxl import Workbook
 import requests
 import mysql.connector, time, datetime, math, openpyxl, sys, shutil, os
@@ -17,7 +17,6 @@ infoMsg = True
 dryType = False
 gasType = False
 transmitterModeMinus = False
-edmcrType = False
 
 exhibitStat = False
 OLTCstat = False
@@ -192,30 +191,62 @@ def main():
         time.sleep(0.2)
         getTemp = client.read_holding_registers(4, 3, slave = 3)
         time.sleep(0.2)
-        getElect1 = client.read_holding_registers(0, 29, slave = 2)
+        # getElect1 = client.read_holding_registers(0, 29, slave = 2)
+        # time.sleep(0.2)
+        # getElect2 = client.read_holding_registers(46, 5, slave = 2)
+        # time.sleep(0.2)
+        # getElect3 = client.read_holding_registers(800, 6, slave = 2)
+        # time.sleep(0.2)
+        # getHarmV = client.read_holding_registers(806, 90, slave = 2)
+        # time.sleep(0.2)
+        # getHarmI = client.read_holding_registers(896, 90, slave = 2)
+        # time.sleep(0.2)
+
+        # PM2100
+        getCurrent = client.read_holding_registers(3000, 8, slave = 2)
+        time.sleep(0.1)
+        getVoltage = client.read_holding_registers(3020, 14, slave = 2)
+        time.sleep(0.1)
+        getPower = client.read_holding_registers(3054, 30, slave = 2)
+        time.sleep(0.1)
+        getFreq = client.read_holding_registers(3110, 2, slave = 2)
+        time.sleep(0.1)
+        getWh = client.read_holding_registers(3204, 4, slave = 2)
+        time.sleep(0.1)
+        getVARh = client.read_holding_registers(3220, 4, slave = 2)
+        time.sleep(0.1)
+        getTHDi = client.read_holding_registers(21300, 6, slave = 2)
+        time.sleep(0.1)
+        getTHDv = client.read_holding_registers(21330, 6, slave = 2)
+        time.sleep(0.1)
+        getHarmVA = client.read_holding_registers(22876, 86, slave = 2)
+        time.sleep(0.1)
+        getHarmVB = client.read_holding_registers(23264, 86, slave = 2)
+        time.sleep(0.1)
+        getHarmVC = client.read_holding_registers(23652, 86, slave = 2)
+        time.sleep(0.1)
+        getHarmIA = client.read_holding_registers(24428, 86, slave = 2)
+        time.sleep(0.1)
+        getHarmIB = client.read_holding_registers(24816, 86, slave = 2)
+        time.sleep(0.1)
+        getHarmIC = client.read_holding_registers(25204, 86, slave = 2)
+        time.sleep(0.1)
+
+        getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
+        try:
+            DMCRval = getDMCR.registers
+        except:
+            DMCRval = [0, 0, 0, 4]
         time.sleep(0.2)
-        getElect2 = client.read_holding_registers(46, 5, slave = 2)
-        time.sleep(0.2)
-        getElect3 = client.read_holding_registers(800, 6, slave = 2)
-        time.sleep(0.2)
-        getHarmV = client.read_holding_registers(806, 90, slave = 2)
-        time.sleep(0.2)
-        getHarmI = client.read_holding_registers(896, 90, slave = 2)
-        time.sleep(0.2)
-        if edmcrType:
-            getDMCR = client.read_holding_registers(0x1301, 4, slave = 1)
-            try:
-                DMCRval = getDMCR.registers
-            except:
-                DMCRval = [0, 0, 0, 4] 
         if gasType :
             getH2 = client.read_holding_registers(0, 1, slave = 4)
             getMoist = client.read_input_registers(0, 3, slave = 5)
             if debugMsg == True: print("1D|4b Parse Data")
-            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, getMoist, dataLen, CTratio, PTratio)
+            # inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, getH2, getMoist, dataLen, CTratio, PTratio)
         else :
             if debugMsg == True: print("1D|4b Parse Data")
-            inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, 0, 0, dataLen, CTratio, PTratio)
+            # inputData = dataParser(exhibitStat, getTemp, getElect1, getElect2, getElect3, 0, 0, dataLen, CTratio, PTratio)
+            inputData = dataParserPM2100(exhibitStat, getTemp, getVoltage, getCurrent, getPower, getFreq, getWh, getVARh, getTHDi, getTHDv, dataLen, CTratio, PTratio)
         if dryType :
             getTemp2 = client.read_holding_registers(0, 3, slave = 7)
             try :
@@ -226,16 +257,10 @@ def main():
                 pass
         
         if debugMsg == True: print("1D|5 Read Input IO")
-        if edmcrType:
-            oilLevelAlarm = 1 if DMCRval[3]<=3 else 0
-            oilLevelTrip = 1 if DMCRval[3]==1 else 0
-            analogIn1 = (signedInt16Handler(DMCRval[1]))/10
-            analogIn2 = (signedInt16Handler(DMCRval[0]))/1000
-        else:
-            oilLevelAlarm = inputIO[4][2]
-            oilLevelTrip = inputIO[5][2]
-            analogIn1 = inputIO[6][2]
-            analogIn2 = inputIO[7][2]
+        oilLevelAlarm = 1 if DMCRval[3]<=3 else 0
+        oilLevelTrip = 1 if DMCRval[3]==1 else 0
+        analogIn1 = (signedInt16Handler(DMCRval[1]))/10
+        analogIn2 = (signedInt16Handler(DMCRval[0]))/1000
 
         if (oilLevelAlarm and oilLevelTrip) or oilLevelTrip:
             oilStat = 1
@@ -246,14 +271,7 @@ def main():
         inputData[44] = oilStat     #Oil Level
 
         if tempStat :
-            if edmcrType:
-                inputData[39] = analogIn1
-            else:
-                if transmitterModeMinus :
-                    suhu = round(((analogIn1 * 0.009537) - 112.5), 3)
-                else:
-                    suhu = round(((analogIn1 * 0.007630) - 50), 3)
-                inputData[39] = max(0, suhu)
+            inputData[39] = analogIn1
         else : 
             inputData[39] = 0
         
@@ -262,10 +280,7 @@ def main():
             cursor.execute(sqlLibrary.sqlUpdateTapPos, (tapPos,))
 
         if pressureStat:
-            if edmcrType:
-                inputData[43] = analogIn2
-            else:
-                inputData[43] = (analogIn2 - 6553) / 26214
+            inputData[43] = analogIn2
         else:
             inputData[43] = 0
         
@@ -312,8 +327,10 @@ def main():
                 inputData[i + 40] = (round((inputData[39] + (deltaH1[i] - deltaH2[i])) * 100))/100
         
         if debugMsg == True: print("1D|7 Parse Harm, Update DB")
-        inputHarmonicV = harmonicParser(getHarmV)
-        inputHarmonicI = harmonicParser(getHarmI)
+        # inputHarmonicV = harmonicParser(getHarmV)
+        # inputHarmonicI = harmonicParser(getHarmI)
+        inputHarmonicV = harmonicParserPM2100(getHarmVA, getHarmVB, getHarmVC)
+        inputHarmonicI = harmonicParserPM2100(getHarmIA, getHarmIB, getHarmIC)
         cursor.execute(sqlLibrary.sqlUpdateVHarm1, inputHarmonicV[0])
         cursor.execute(sqlLibrary.sqlUpdateVHarm2, inputHarmonicV[1])
         cursor.execute(sqlLibrary.sqlUpdateVHarm3, inputHarmonicV[2])

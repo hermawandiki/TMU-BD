@@ -3,6 +3,7 @@ import binascii
 import openpyxl, requests, serial
 import time, datetime, sys, os, struct
 import mysql.connector, math, logging, threading
+import gpsModule
 import toolboxTmu
 from pymodbus.client import ModbusSerialClient
 from requests.models import StreamConsumedError
@@ -11,8 +12,8 @@ from tkinter import *
 from openpyxl import *
 
 #init value
-engineName = "Wilmar Nabati 25 MVA"
-teleURL = 'http://192.168.100.22:1444/api/transformer/sendNotificationToTelegramGroup'
+engineName = "Wilmar Nabati SWRO3"
+teleURL = 'http://192.168.95.69:1444/api/transformer/sendNotificationToTelegramGroup'
 reverser = 1
 limitPF = 3
 healthLimit = 90
@@ -24,8 +25,8 @@ designedKrated = 1  #initial value
 eddyLosesGroup = 0.02 #See table Eddy Current Group
 maxSample = 10 #GPS
 progStat = True
-CTratio = 300
-PTratio = 105
+CTratio = 800
+PTratio = 1
 CTPTratio = CTratio * PTratio
 
 #init tkinter
@@ -70,8 +71,8 @@ except:
             'Itot', 'PFsyst', 'Psig', 'Qsig', 'Ssig', 'Freq', 'Ineutral',
             'kWhInp', 'kWhOut', 'kVARhinp', 'kVARhOut',
             'KRateda', 'deRatinga', 'KRatedb', 'deRatingb', 'KRatedc', 'deRatingc',
-            'WTITemp1', 'WTITemp2', 'WTITemp3', 'Status'
-            'OilLvAlarm', 'OilLvTrip', 'MPRD', 'BuchAlrm', 'BuchTrip'),)
+            'WTITemp1', 'WTITemp2', 'WTITemp3', 'Status',
+            'DI 1', 'DI 2', 'DI 3', 'DI 3', 'DI 4'),)
     for row in name:
         sheet.append(row)
     wb.save(pathDatLog)
@@ -92,6 +93,13 @@ db = mysql.connector.connect(
     user = "client",
     passwd = "raspi",
     database= "iot_trafo_client")
+
+"""
+try:
+    port = gpsModule.initConnection()
+except Exception as Argument:
+    logging.exception("Error Opening GPS port")
+"""
     
 #fetch init trafoData
 cursor0 = db.cursor()
@@ -99,7 +107,21 @@ sql0 = "SELECT * FROM transformer_data"
 cursor0.execute(sql0)
 initData = cursor0.fetchall()[0]
 suddenState = initData[29]
+lastPosition = [initData[30], initData[31]] #GPS
 
+#update inital Pos
+"""try:
+    lastPosition = gpsModule.updatePosition(port, 9, maxSample, lastPosition)
+    cursorPos = db.cursor()
+    sqlPos = "UPDATE transformer_data SET latitude = %s WHERE trafoId = 1"
+    cursorPos.execute(sqlPos, (lastPosition[0],))
+    sqlPos = "UPDATE transformer_data SET longitude = %s WHERE trafoId = 1"
+    cursorPos.execute(sqlPos, (lastPosition[1],))
+    db.commit()
+    logging.info("Position Updated")
+except Exception as Argument:
+    logging.exception("Error updating last Position")
+"""
 #pre-init used Var    
 windTemp = [29.0, 28.0, 31.0]
 timePassed = [1, 1, 1]
@@ -152,8 +174,8 @@ def plcHandler(getPLC):
     except:
         plcData[4] = 404
         pass
-    plcData[0] = ((round((plcData[0]/1023) * 20000))/100)
-    if plcData[0] < 0 or plcData[0] > 180:
+    plcData[0] = ((round((plcData[0]/1000) * 25000))/100) - 50
+    if plcData[0] < 0 or plcData[0] > 150:
         plcData[0] == 0
     return plcData
 
@@ -282,6 +304,20 @@ def mainLoop(thread_name, interval):
             progStatLbl['text'] = "Running"
             currentTime = datetime.datetime.now()
             if int((currentTime-previousTime).total_seconds()) > 3600:
+                """
+                try:
+                    logging.info("D01 Hourly update GPS pos.")
+                    lastPosition = gpsModule.updatePosition(port, 24, maxSample, lastPosition)
+                    cursorPos = db.cursor()
+                    sqlPos = "UPDATE transformer_data SET latitude = %s WHERE trafoId = 1"
+                    cursorPos.execute(sqlPos, lastPosition[0])
+                    sqlPos = "UPDATE transformer_data SET longitude = %s WHERE trafoId = 1"
+                    cursorPos.execute(sqlPos, lastPosition[1])
+                    db.commit()
+                    logging.info("Position Updated")
+                except Exception as Argument:
+                    logging.exception("Error updating last Position")
+                """
                 logging.info("D02 Hourly Fetch Active Error")
                 for i in range(0, len(activeFailure)):
                     errorMsgReg[i] = str(activeFailure[i][4] + " " + activeFailure[i][3] + " , Value = " + activeFailure[i][5] + "\n" + "Time Occurence : " + str(activeFailure[i][1]))
@@ -355,8 +391,7 @@ def mainLoop(thread_name, interval):
                     else:
                         newResult[0][0] = plcResult[0]
                     newResult[0][5] = plcResult[1]
-                    #print("Level")
-                    #print(newResult[0][5])
+                    
             except Exception as Argument:
                 logging.info(newResult)
                 try:
@@ -386,9 +421,9 @@ def mainLoop(thread_name, interval):
                 for i in range (0, 9):
                     if str(DIstat[i]) != str(DIprop[i][2]):
                         if str(DIstat[i]) == '0':
-                            DIstringStat = " become False"
+                            DIstringStat = " become Normal"
                         else:
-                            DIstringStat = " become True"
+                            DIstringStat = " become Trip"
                         cursor16 = db.cursor()
                         sql16 = """UPDATE di_scan SET state = %s WHERE number = %s"""
                         cursor16.execute(sql16, (DIstat[i], i))
@@ -510,12 +545,8 @@ def mainLoop(thread_name, interval):
                                             %s, %s, %s, %s, %s)"""
                 sendData = [datetime.datetime.now()] + currentResult
                 cursor.execute(sql, sendData)
-                logging.info("New data added to db")
-                tapPos = round((plcResult[2] * 0.02215) - 3.12)
-                sql = "UPDATE transformer_data SET impedance = %s WHERE trafoId = 1"
-                cursor.execute(sql, (tapPos,))
-                #print(tapPos)
                 db.commit()
+                logging.info("New data added to db")
                 lastTsLbl['text'] = str(datetime.datetime.now())
                 logging.info("D15 Process5 : Conditioning Setting and Value")
                 [paramValue, gasFault] = toolboxTmu.gatherParamValue(currentResult, paramNum, gasFault)
@@ -755,7 +786,7 @@ def mainLoop(thread_name, interval):
                 stateChanges = False
                 stateListBool = [0]*len(stateListBool)
             logging.info("End Sect. Looping")
-            time.sleep(3)
+            time.sleep(5)
         else:
             progStatLbl['text'] = "Stop"
             
